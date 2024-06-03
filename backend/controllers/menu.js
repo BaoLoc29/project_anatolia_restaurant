@@ -11,32 +11,25 @@ export const createMenu = async (req, res) => {
 
         const createSchema = joi.object({
             code: joi.string().required().messages({
-                'string.empty': 'Code must be a string',
-                'any.required': 'Code is required'
+                'string.empty': 'Mã thực đơn không được để trống'
             }),
             name: joi.string().required().messages({
-                'string.empty': 'Name is required',
-                'any.required': 'Name is required'
+                'string.empty': 'Tên món ăn không được để trống'
             }),
             classify: joi.string().required().messages({
-                'string.empty': 'Classify is required',
-                'any.required': 'Classify is required'
+                'string.empty': 'Phân loại không được để trống'
             }),
             description: joi.string().required().messages({
-                'string.empty': 'Description is required',
-                'any.required': 'Description is required'
+                'string.empty': 'Mô tả thực đơn không được để trống'
             }),
             unit: joi.string().required().messages({
-                'string.empty': 'Unit is required',
-                'any.required': 'Unit is required'
+                'string.empty': 'Đơn vị món không được để trống'
             }),
             price: joi.number().required().messages({
-                'number.base': 'Price must be a number',
-                'any.required': 'Price is required'
+                'number.base': 'Giá món không được để trống'
             }),
             discount: joi.number().required().messages({
-                'number.base': 'Discount must be a number',
-                'any.required': 'Discount is required'
+                'number.base': 'Giảm giá món không được để trống'
             })
         });
 
@@ -49,8 +42,11 @@ export const createMenu = async (req, res) => {
 
         const result = await Menu.create({ code, name, classify, description, unit, price, discount });
         return res.status(200).json({
-            ...result.toObject(),
-            createdAt: formatCreatedAt(result.createdAt)
+            message: "Thêm mới món ăn vào thực đơn thành công.",
+            menu: {
+                ...result.toObject(),
+                createdAt: formatCreatedAt(result.createdAt)
+            }
         });
     } catch (error) {
         return res.status(500).json({ message: error.message })
@@ -62,32 +58,25 @@ export const editMenu = async (req, res) => {
         const { id } = req.params
         const editSchema = joi.object({
             code: joi.string().required().messages({
-                'string.empty': 'Code must be a string',
-                'any.required': 'Code is required'
+                'string.empty': 'Mã thực đơn không được để trống'
             }),
             name: joi.string().required().messages({
-                'string.empty': 'Name is required',
-                'any.required': 'Name is required'
+                'string.empty': 'Tên món ăn không được để trống'
             }),
             classify: joi.string().required().messages({
-                'string.empty': 'Classify is required',
-                'any.required': 'Classify is required'
+                'string.empty': 'Phân loại không được để trống'
             }),
             description: joi.string().required().messages({
-                'string.empty': 'Description is required',
-                'any.required': 'Description is required'
+                'string.empty': 'Mô tả thực đơn không được để trống'
             }),
             unit: joi.string().required().messages({
-                'string.empty': 'Unit is required',
-                'any.required': 'Unit is required'
+                'string.empty': 'Đơn vị món không được để trống'
             }),
             price: joi.number().required().messages({
-                'number.base': 'Price must be a number',
-                'any.required': 'Price is required'
+                'number.base': 'Giá món không được để trống'
             }),
             discount: joi.number().required().messages({
-                'number.base': 'Discount must be a number',
-                'any.required': 'Discount is required'
+                'number.base': 'Giảm giá món không được để trống'
             })
         });
         const { error } = editSchema.validate({ code, name, classify, description, unit, price, discount });
@@ -100,7 +89,7 @@ export const editMenu = async (req, res) => {
         const updateMenu = await Menu.findByIdAndUpdate(id, { code, name, classify, description, unit, price, discount }, { new: true })
 
         return res.status(200).json({
-            message: "Update successfull",
+            message: "Cập nhật món ăn trong thực đơn thành công.",
             menu: {
                 ...updateMenu.toObject(),
                 createdAt: formatCreatedAt(updateMenu.createdAt)
