@@ -9,8 +9,9 @@ import AuthLayout from "./layouts/AuthLayout/index.jsx";
 import isObjctEmpty from "./utils/isObjectEmpty";
 import Orders from "./components/Orders.jsx";
 import Profile from "./components/Profile.jsx";
-import Employee from "./components/Employee.jsx"; 
+import Employee from "./components/Employee.jsx";
 import Table from "./components/Table.jsx";
+import Menu from "./components/Menu.jsx";
 function App() {
   const user = useSelector((state) => state.users.user);
   return (
@@ -28,6 +29,7 @@ function App() {
               <Route path="orders" element={<Orders />} />
               <Route path="employees" element={<Employee />} />
               <Route path="tables" element={<Table />} />
+              <Route path="menus" element={<Menu />} />
               <Route path="my-profile" element={<Profile />} />
             </Route>
           </Route>

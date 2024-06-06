@@ -14,68 +14,101 @@ import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { TiDelete } from "react-icons/ti";
 import { toast } from "react-hot-toast";
-import ModalCreateTable from "./ModalCreateTable/index.jsx";
+import ModalCreateMenu from "./ModalCreateMenu/index.jsx";
 import {
-  createTable,
-  editTable,
-  deleteTable,
-  getPagingTable,
-  searchTable,
-} from "../services/table.js";
+  createMenu,
+  editMenu,
+  deleteMenu,
+  getPagingMenu,
+  searchMenu,
+} from "../services/menu.js";
 
-const TableComponent = () => {
-  const [tables, setTables] = useState([]);
+const MenuComponent = () => {
+  const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalDoc, setTotalDoc] = useState(0);
-  const [modalCreateTable, setModalCreateTable] = useState(false);
-  const [selectedTable, setSelectedTable] = useState(null);
+  const [modalCreateMenu, setModalCreateMenu] = useState(false);
+  const [selectedMenu, setSelectedMenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOption, setSelectedOption] = useState("id_table");
+  const [selectedOption, setSelectedOption] = useState("code");
   const [searchResults, setSearchResults] = useState([]);
   const [searchTotalDoc, setSearchTotalDoc] = useState(0);
   const [searchPageIndex, setSearchPageIndex] = useState(1);
 
-  const handleOpenEditModal = (tableId) => {
-    setModalCreateTable(true);
-    setSelectedTable(tableId);
+  const handleOpenEditModal = (menuId) => {
+    setModalCreateMenu(true);
+    setSelectedMenu(menuId);
   };
 
   const handelCloseModal = () => {
     form.resetFields();
-    setModalCreateTable(false);
-    setSelectedTable(null);
+    setModalCreateMenu(false);
+    setSelectedMenu(null);
   };
 
   const options = [
-    { value: "id_table", label: "Mã bàn" },
-    { value: "location", label: "Vị trí bàn" },
+    { value: "code", label: "Mã món ăn" },
+    { value: "name", label: "Tên món ăn" },
   ];
 
   const columns = [
     {
-      title: "Mã bàn",
-      dataIndex: "id_table",
-      key: "id_table",
+      title: "Mã món ăn",
+      dataIndex: "code",
+      key: "code",
       sorter: (a, b) => {
-        if (typeof a.id_table === "number" && typeof b.id_table === "number") {
-          return a.id_table - b.id_table;
+        if (typeof a.code === "number" && typeof b.code === "number") {
+          return a.code - b.code;
         }
-        return a.id_table.localeCompare(b.id_table);
+        return a.code.localeCompare(b.code);
       },
     },
     {
-      title: "Sức chứa",
-      dataIndex: "capacity",
-      key: "capacity",
-      sorter: (a, b) => a.capacity - b.capacity,
+      title: "Tên món ăn",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: "Vị trí bàn",
-      dataIndex: "location",
-      key: "location",
+      title: "Phân loại",
+      dataIndex: "classify",
+      key: "classify",
+      filters: [
+        {
+          text: "Món ăn",
+          value: "Món ăn",
+        },
+        {
+          text: "Đồ uống",
+          value: "Đồ uống",
+        },
+      ],
+      onFilter: (value, record) => record.classify.indexOf(value) === 0,
+    },
+    {
+      title: "Giá tiền",
+      dataIndex: "price",
+      key: "price",
+      render: (price) => {
+        if (typeof price === "number") {
+          return price.toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          });
+        } else {
+          return "Invalid Price";
+        }
+      },
+    },
+    {
+      title: "Giảm giá",
+      dataIndex: "discount",
+      key: "discount",
+      render: (discount) => {
+        return `${discount}%`;
+      },
     },
     {
       title: "Ngày tạo",
@@ -88,10 +121,8 @@ const TableComponent = () => {
       key: "status",
       render: (status) => {
         const colorMap = {
-          "Còn trống": "green",
-          "Đang sử dụng": "blue",
-          "Đã đặt cọc": "gold",
-          "Chưa đặt cọc": "red",
+          "Còn món": "green",
+          "Hết món": "red",
         };
         return <Tag color={colorMap[status]}>{status}</Tag>;
       },
@@ -107,11 +138,11 @@ const TableComponent = () => {
               onClick={() => handleOpenEditModal(row._id)}
             />
             <Popconfirm
-              title="Xóa bàn không dùng đến"
-              description="Bạn có chắc muốn xóa bàn này không ?!!"
-              onConfirm={() => handleDeleteTable(row._id)}
+              title="Xóa món ăn ra khỏi menu"
+              description="Bạn có chắc muốn xóa món ăn này không?!!"
+              onConfirm={() => handleDeleteMenu(row._id)}
               okText="Đồng ý"
-              cancelText="Hủy bỏ"
+              cancelText="Hủy"
               style={{ cursor: "pointer" }}
             >
               <MdDelete className="text-red-500 text-2xl hover:text-red-700 cursor-pointer" />
@@ -124,69 +155,69 @@ const TableComponent = () => {
 
   const [form] = Form.useForm();
 
-  const getTables = useCallback(async () => {
+  const getMenus = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await getPagingTable({ pageSize, pageIndex });
-      setTables(result.data.tables);
+      const result = await getPagingMenu({ pageSize, pageIndex });
+      setMenus(result.data.menus);
       setTotalPages(result.data.totalPages);
       setTotalDoc(result.data.count);
     } catch (error) {
       console.log(error);
-      toast.error("Không tìm thấy danh sách bàn!");
+      toast.error("Không tìm thấy thực đơn!");
     } finally {
       setLoading(false);
     }
   }, [pageSize, pageIndex]);
 
   useEffect(() => {
-    getTables();
-  }, [getTables]);
+    getMenus();
+  }, [getMenus]);
 
-  const handleCreateTable = async (value) => {
+  const handleCreateMenu = async (value) => {
     try {
       setLoading(true);
       const { confirm, ...dataToSend } = value;
-      if (!selectedTable) {
-        const result = await createTable(dataToSend);
-        setTables([result.data.result, ...tables]);
-        toast.success("Thêm bàn mới thành công!");
+      if (!selectedMenu) {
+        const result = await createMenu(dataToSend);
+        setMenus([result.data.result, ...menus]);
+        toast.success("Thêm món mới vào menu thành công!");
       } else {
-        const result = await editTable(selectedTable, value);
-        setTables(
-          tables.map((table) => {
-            if (table._id === selectedTable) {
-              return result.data.table;
+        const result = await editMenu(selectedMenu, value);
+        setMenus(
+          menus.map((menu) => {
+            if (menu._id === selectedMenu) {
+              return result.data.menu;
             }
-            return table;
+            return menu;
           })
         );
-        toast.success("Cập nhật bàn thành công!");
-        setSelectedTable(null);
+        toast.success("Cập nhật thực đơn thành công!");
+        setSelectedMenu(null);
       }
-      setModalCreateTable(false);
       handleClearSearch();
+      setModalCreateMenu(false);
       form.resetFields();
     } catch (error) {
       console.log(error);
       toast.error(
-        selectedTable ? "Cập nhật bàn thất bại!" : "Thêm bàn mới thất bại!"
+        selectedMenu ? "Cập nhật thực đơn thất bại!" : "Thêm thực đơn thất bại!"
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteTable = async (tableId) => {
+  const handleDeleteMenu = async (menuId) => {
     try {
       setLoading(true);
-      await deleteTable(tableId);
-      setTables(tables.filter((table) => table._id !== tableId));
-      toast.success("Xóa bàn thành công!");
+      await deleteMenu(menuId);
+      setMenus(menus.filter((menu) => menu._id !== menuId));
+      toast.success("Xóa món ăn thành công!");
       handleClearSearch();
     } catch (error) {
       console.log(error);
-      toast.error("Xóa bàn thất bại!");
+      toast.error("Xóa món ăn thất bại!");
     } finally {
       setLoading(false);
     }
@@ -196,19 +227,19 @@ const TableComponent = () => {
     try {
       setLoading(true);
       if (searchQuery.trim() !== "") {
-        const response = await searchTable(
+        const response = await searchMenu(
           searchQuery,
           selectedOption,
           searchPageIndex,
           pageSize
         );
-        const searchResults = response.data.tables;
+        const searchResults = response.data.menus;
         setSearchResults(searchResults);
         setSearchTotalDoc(response.data.count);
         setSearchPageIndex(1);
       }
     } catch (error) {
-      toast.error("Không tìm thấy bàn cần tìm!");
+      toast.error("Không tìm thấy món ăn này!");
     } finally {
       setLoading(false);
     }
@@ -217,7 +248,7 @@ const TableComponent = () => {
   const handleClearSearch = () => {
     setSearchQuery("");
     setSearchResults([]);
-    getTables();
+    getMenus();
   };
 
   const handlePaginationChange = (pageIndex, pageSize) => {
@@ -235,10 +266,10 @@ const TableComponent = () => {
   return (
     <div className="h-[37.45rem]">
       <div className="flex justify-between items-center px-2 pb-4 pr-4 pl-4 pt-0">
-        <h1 className="text-gray-500 text-xl">Danh sách bàn</h1>
+        <h1 className="text-gray-500 text-xl">Danh sách món ăn</h1>
         <Space.Compact className="w-[32rem] relative">
           <Select
-            defaultValue="id_table"
+            defaultValue="code"
             options={options}
             className="w-[10rem]"
             onChange={(value) => setSelectedOption(value)}
@@ -256,14 +287,14 @@ const TableComponent = () => {
             />
           )}
         </Space.Compact>
-        <Button type="primary" onClick={() => setModalCreateTable(true)}>
-          Thêm bàn mới
+        <Button type="primary" onClick={() => setModalCreateMenu(true)}>
+          Thêm món mới
         </Button>
       </div>
       <Table
         loading={loading}
         columns={columns}
-        dataSource={searchResults.length > 0 ? searchResults : tables}
+        dataSource={searchResults.length > 0 ? searchResults : menus}
         pagination={false}
       />
       <Pagination
@@ -275,17 +306,21 @@ const TableComponent = () => {
         showSizeChanger
         onChange={handlePaginationChange}
       />
-      <ModalCreateTable
+      <ModalCreateMenu
         form={form}
         loading={loading}
-        title={selectedTable ? "Cập nhật bàn" : "Thêm loại bàn mới"}
-        isModalOpen={modalCreateTable}
+        title={
+          selectedMenu
+            ? "Cập nhật món ăn trong thực đơn"
+            : "Thêm món mới vào thực đơn"
+        }
+        isModalOpen={modalCreateMenu}
         handleCancel={handelCloseModal}
-        handleOk={handleCreateTable}
-        selectedTable={selectedTable}
+        handleOk={handleCreateMenu}
+        selectedMenu={selectedMenu}
       />
     </div>
   );
 };
 
-export default TableComponent;
+export default MenuComponent;

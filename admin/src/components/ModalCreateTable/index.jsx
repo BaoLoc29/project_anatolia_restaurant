@@ -96,26 +96,33 @@ const ModalCreateTable = ({
           </Select>
         </Form.Item>
 
-        <label htmlFor="status" className="block text-sm font-bold mb-1">
-          Trạng thái bàn: <span className="text-red-500">*</span>
-        </label>
-        <Form.Item
-          name="status"
-          style={{ marginBottom: 20 }}
-          rules={[
-            {
-              required: true,
-              message: "Trạng thái bàn không được để trống!",
-            },
-          ]}
-        >
-          <Select placeholder="--Chọn trạng thái bàn--" className="text-base">
-            <Select.Option value="Còn trống">Còn trống</Select.Option>
-            <Select.Option value="Đang sử dụng">Đang sử dụng</Select.Option>
-            <Select.Option value="Đã đặt cọc">Đã đặt cọc</Select.Option>
-            <Select.Option value="Chưa đặt cọc">Chưa đặt cọc</Select.Option>
-          </Select>
-        </Form.Item>
+        {selectedTable && (
+          <>
+            <label htmlFor="status" className="block text-sm font-bold mb-1">
+              Trạng thái bàn: <span className="text-red-500">*</span>
+            </label>
+            <Form.Item
+              name="status"
+              style={{ marginBottom: 20 }}
+              rules={[
+                {
+                  required: true,
+                  message: "Trạng thái bàn không được để trống!",
+                },
+              ]}
+            >
+              <Select
+                placeholder="--Chọn trạng thái bàn--"
+                className="text-base"
+              >
+                <Select.Option value="Còn trống">Còn trống</Select.Option>
+                <Select.Option value="Đang sử dụng">Đang sử dụng</Select.Option>
+                <Select.Option value="Đã đặt cọc">Đã đặt cọc</Select.Option>
+                <Select.Option value="Chưa đặt cọc">Chưa đặt cọc</Select.Option>
+              </Select>
+            </Form.Item>
+          </>
+        )}
 
         <div className="flex justify-end">
           <Button onClick={handleCancel} className="mr-2 mb-2">

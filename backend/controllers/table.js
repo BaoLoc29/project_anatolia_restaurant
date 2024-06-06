@@ -7,7 +7,7 @@ const formatCreatedAt = (date) => {
 
 export const createTable = async (req, res) => {
     try {
-        const { capacity, location, status } = req.body
+        const { capacity, location } = req.body
 
         const createSchema = joi.object({
             capacity: joi.number().required().messages({
@@ -16,14 +16,10 @@ export const createTable = async (req, res) => {
             location: joi.string().valid('Cạnh cửa sổ', 'Ngoài trời', 'Trung tâm').required().messages({
                 'string.empty': 'Vị trí bàn không được để trống!',
                 'any.only': "Vị trí phải là Cạnh cửa sổ, Ngoài trời hoặc Trung tâm",
-            }),
-            status: joi.string().required().valid('Còn trống', 'Đang sử dụng', 'Đã đặt cọc', 'Chưa đặt cọc').messages({
-                'string.empty': 'Trạng thái bàn không được để trống!',
-                'any.only': "Trạng thái phải là Còn trống, Đang sử dụng, Đã đặt cọc hoặc Chưa đặt cọc",
             })
         });
 
-        const { error } = createSchema.validate({ capacity, location, status });
+        const { error } = createSchema.validate({ capacity, location });
         if (error) {
             return res.status(400).json({
                 error: error.details.map(e => e.message)
@@ -55,8 +51,7 @@ export const createTable = async (req, res) => {
         const result = await Table.create({
             id_table: newIdTable,
             capacity,
-            location,
-            status
+            location
         });
 
         return res.status(200).json({
@@ -99,7 +94,7 @@ export const editTable = async (req, res) => {
         if (!updateTable) {
             return res.status(404).json({ message: "Không tìm thấy bàn." })
         }
-        // thêm tiền tố
+
         let prefix;
         if (location === 'Cạnh cửa sổ') {
             prefix = 'A';
@@ -117,13 +112,11 @@ export const editTable = async (req, res) => {
             const latestTable = await Table.findOne({ id_table: new RegExp(`^${prefix}`) }).sort({ id_table: -1 }).exec();
             let newIdTable;
             if (latestTable && latestTable.id_table) {
-                // Tách số ra khỏi chữ và tăng lên 1
                 const numericPart = parseInt(latestTable.id_table.slice(1)) + 1;
                 newIdTable = `${prefix}${numericPart.toString().padStart(3, '0')}`;
             } else {
                 newIdTable = `${prefix}001`;
             }
-            // Cập nhật mã nhân viên mới cho người dùng
             updateTable.id_table = newIdTable;
             await updateTable.save();
         }
@@ -164,7 +157,6 @@ export const getPagingTable = async (req, res) => {
         const countTables = await Table.countDocuments()
         const totalPage = Math.ceil(countTables / query.pageSize)
 
-        // Format createdAt for each user
         const formattedTables = tables.map(table => ({
             ...table.toObject(),
             createdAt: formatCreatedAt(table.createdAt)
@@ -196,12 +188,7 @@ export const searchTable = async (req, res) => {
             return res.status(400).json({ noKeyword })
         }
         let searchField = {};
-        if (option === "capacity") {
-            if (isNaN(keyword)) {
-                return res.status(400).json({ message: "Sức chứa phải là một số!" });
-            }
-            searchField = { capacity: Number(keyword) };
-        } else if (option === "location") {
+        if (option === "location") {
             searchField = { location: { $regex: keyword, $options: 'i' } };
         } else if (option === "id_table") {
             searchField = { id_table: { $regex: keyword, $options: 'i' } };

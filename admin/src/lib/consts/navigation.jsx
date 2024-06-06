@@ -6,6 +6,7 @@ import {
 } from "react-icons/hi";
 import { SiAirtable } from "react-icons/si";
 import { FaUserTie } from "react-icons/fa";
+import { IoFastFood } from "react-icons/io5";
 
 export const DASHBOARD_SIDEBAR_LINKS = [
   {
@@ -25,6 +26,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Quản lý bàn",
     path: "/tables",
     icon: <SiAirtable />,
+  },
+  {
+    key: "employees",
+    label: "Quản lý thực đơn",
+    path: "/menus",
+    icon: <IoFastFood />,
   },
   {
     key: "employees",

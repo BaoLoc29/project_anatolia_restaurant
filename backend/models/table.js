@@ -15,7 +15,8 @@ const Table = new mongoose.Schema({
     },
     status: {
         type: String,
-        required: true
+        required: true,
+        default: "Còn trống"
     },
 }, { timestamps: true })
 export default mongoose.model("tables", Table)

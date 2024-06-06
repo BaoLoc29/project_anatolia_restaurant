@@ -163,7 +163,7 @@ const Employee = () => {
         setSelectedUser(null);
       }
       setModalCreateUser(false);
-      getUsers();
+      handleClearSearch();
       form.resetFields();
     } catch (error) {
       console.log(error);
@@ -183,6 +183,7 @@ const Employee = () => {
       await deleteUser(userId);
       setUsers(users.filter((user) => user._id !== userId));
       toast.success("Xóa tài khoản thành công!");
+      handleClearSearch();
     } catch (error) {
       console.log(error);
       toast.error("Xóa tài khoản thất bại!");
@@ -216,8 +217,7 @@ const Employee = () => {
   const handleClearSearch = () => {
     setSearchQuery("");
     setSearchResults([]);
-    setSearchTotalDoc(0);
-    setSearchPageIndex(1);
+    getUsers();
   };
 
   const handlePaginationChange = (pageIndex, pageSize) => {
