@@ -28,6 +28,11 @@ const Menu = new mongoose.Schema({
     discount: {
         type: Number,
         required: true
+    },
+    status: {
+        type: String,
+        require: true,
+        default: "Còn món"
     }
 
 }, { timestamps: true })

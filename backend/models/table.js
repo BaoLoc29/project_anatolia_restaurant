@@ -5,10 +5,6 @@ const Table = new mongoose.Schema({
         type: String,
         required: true
     },
-    name: {
-        type: String,
-        required: true
-    },
     capacity: {
         type: Number,
         required: true
@@ -19,7 +15,8 @@ const Table = new mongoose.Schema({
     },
     status: {
         type: String,
-        required: true
+        required: true,
+        default: "Còn trống"
     },
 }, { timestamps: true })
 export default mongoose.model("tables", Table)

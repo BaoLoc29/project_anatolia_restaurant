@@ -1,13 +1,15 @@
 import express from "express"
-import { login, createUser, editUser, deleteUser, getPagingUser, searchUser, getUserById, changePassword } from "../controllers/user.js"
+import { login, createUser, editUser, deleteUser, getPagingUser, searchUser, getUserProfile, changePassword, getUserById } from "../controllers/user.js"
+import authentication from './../middlewares/authentication.js';
 
 const router = express.Router()
 router.post("/login", login)
-router.post("/create-user", createUser)
-router.put("/:id", editUser)
-router.delete("/:id", deleteUser)
-router.get("/get-paging-user", getPagingUser)
-router.get("/:id", getUserById)
-router.post("/search-user", searchUser)
-router.put("/change-password/:id", changePassword)
+router.get("/get-user-profile", authentication, getUserProfile)
+router.post("/create-user", authentication, createUser)
+router.put("/:id", authentication, editUser)
+router.delete("/:id", authentication, deleteUser)
+router.get("/get-paging-user", authentication, getPagingUser)
+router.post("/search-user", authentication, searchUser)
+router.put("/change-password/:id", authentication, changePassword)
+router.get("/:id", authentication, getUserById)
 export default router

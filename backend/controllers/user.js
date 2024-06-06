@@ -16,14 +16,14 @@ export const login = async (req, res) => {
 
         const loginSchema = joi.object({
             email: joi.string().email().min(3).max(32).required().messages({
-                "string.email": "Invalid email format",
-                "string.min": "Email must be at least 3 characters",
-                "string.max": "Email must not exceed 32 characters"
+                "string.email": "Định dạng email không hợp lệ!",
+                "string.min": "Email phải có ít nhất 3 ký tự!",
+                "string.max": "Email không được vượt quá 32 ký tự!"
             }),
             password: joi.string().min(6).max(32).required().messages({
-                "string.password": "Invalid password format",
-                "string.min": "Password must be at least 6 characters",
-                "string.max": "Password must not exceed 32 characters"
+                "string.password": "Định dạng mật khẩu không hợp lệ!",
+                "string.min": "Mật khẩu phải có ít nhất 6 ký tự!",
+                "string.max": "Mật khẩu không được vượt quá 32 ký tự!"
             }),
         })
 
@@ -37,7 +37,7 @@ export const login = async (req, res) => {
         const findUser = await User.findOne({ email }).lean()
         if (!findUser) {
             return res.status(401).json({
-                error: "User not found"
+                error: "Người dùng đã tồn tại!"
             })
         }
 
@@ -55,12 +55,12 @@ export const login = async (req, res) => {
 
         if (!checkPassword) {
             return res.status(401).json({
-                error: "Incorrect password"
+                error: "Mật khẩu không chính xác!"
             })
         }
         if (findUser) {
             return res.status(200).json({
-                message: "Login successful",
+                message: "Đăng nhập thành công.",
                 user: returnUser,
                 accessToken
             })
@@ -68,69 +68,73 @@ export const login = async (req, res) => {
     } catch (error) {
         console.error(error);
         if (error.details) {
-            // Nếu có lỗi từ Joi, trả về thông báo lỗi từ Joi
             const errorMessage = error.details.map((detail) => detail.message).join(', ');
             return res.status(400).json({ message: errorMessage });
         } else {
-            // Nếu có lỗi khác, trả về thông báo lỗi mặc định
-            return res.status(500).json({ message: "Failed to Sign In" });
+            return res.status(500).json({ message: "Đăng nhập thất bại" });
         }
     }
 }
 export const createUser = async (req, res) => {
     const { hashSync, genSaltSync } = bcrypt;
     try {
-        const { name, gender, phone, email, password, role } = req.body;
-
+        const data = req.body;
+        const { password, email, role } = data;
         const createSchema = joi.object({
             name: joi.string().required().messages({
-                'string.empty': 'Name is required'
+                'string.empty': 'Tên người dùng là bắt buộc!',
             }),
             gender: joi.boolean().required().messages({
-                'boolean.empty': 'Gender is required'
+                'boolean.empty': 'Giới tính là bắt buộc!',
             }),
             phone: joi.string().length(10).required().messages({
-                "string.length": "Phone must have 10 digits",
-                "any.required": "Please enter your Phone"
+                'string.length': 'Số điện thoại phải có 10 chữ số!',
+                'any.required': 'Vui lòng nhập số điện thoại của bạn!',
             }),
             email: joi.string().email().required().messages({
-                'string.email': 'Invalid email',
-                'string.empty': 'Email is required'
+                'string.email': 'Email không hợp lệ!',
+                'string.empty': 'Email là bắt buộc!',
             }),
             password: joi.string().min(6).required().messages({
-                'string.min': 'Password must be at least 6 characters',
-                'string.empty': 'Password is required'
+                'string.min': 'Mật khẩu phải có ít nhất 6 ký tự!',
+                'string.empty': 'Mật khẩu là bắt buộc!',
             }),
-            role: joi.string().valid('manage', 'employee').required().messages({
-                'string.empty': `Role is required`,
-                'any.only': "Role must be either 'manage' or 'employee'"
+            role: joi.string().valid('Quản lý', 'Nhân viên').required().messages({
+                'string.empty': 'Vai trò là bắt buộc!',
+                'any.only': "Vai trò phải là Quản lý hoặc Nhân viên!",
             }),
         });
 
-        const { error } = createSchema.validate({ name, gender, phone, email, password, role });
+        const { error } = createSchema.validate(data);
         if (error) {
             return res.status(400).json({
-                error: error.details.map(e => e.message)
+                error: error.details.map((e) => e.message),
             });
         }
 
         const findUser = await User.findOne({ email });
         if (findUser) {
-            return res.status(400).json({ message: "User email is already in use. Try using another email." });
+            return res.status(400).json({
+                message: 'Email người dùng đã được sử dụng. Hãy thử sử dụng email khác!',
+            });
         }
 
         // Xác định tiền tố cho e_code dựa trên vai trò
         let prefix;
-        if (role === 'manage') {
+        if (role === 'Quản lý') {
             prefix = 'QL';
-        } else if (role === 'employee') {
+        } else if (role === 'Nhân viên') {
             prefix = 'NV';
         } else {
-            return res.status(400).json({ message: "Invalid role. Role must be either 'manager' or 'employee'." });
+            return res.status(400).json({
+                message: "Vai trò không hợp lệ. Vai trò phải là 'Quản lý' hoặc 'Nhân viên'!",
+            });
         }
 
         // Tìm người dùng có e_code hiện có cao nhất dựa trên tiền tố
-        const latestUser = await User.findOne({ e_code: new RegExp(`^${prefix}`) }).sort({ e_code: -1 }).exec();
+        const latestUser = await User.findOne({ e_code: new RegExp(`^${prefix}`) })
+            .sort({ e_code: -1 })
+            .exec();
         let newECode;
         if (latestUser && latestUser.e_code) {
             // Tách số ra khỏi chữ và tăng lên 1
@@ -144,49 +148,48 @@ export const createUser = async (req, res) => {
         const salt = genSaltSync();
         const hashedPassword = hashSync(password, salt);
 
-        const result = await User.create({ e_code: newECode, name, gender, phone, email, password: hashedPassword, role });
+        const result = await User.create({
+            ...data,
+            e_code: newECode,
+            password: hashedPassword,
+        });
 
         return res.status(200).json({
-            message: "Account has been successfully created.",
-            user: {
-                ...result.toObject(),
-                createdAt: formatCreatedAt(result.createdAt)
-            }
+            message: 'Tạo tài khoản thành công.',
+            ...result.toObject(),
+            createdAt: formatCreatedAt(result.createdAt),
         });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        console.error(error);
+        return res.status(500).json({ message: 'Tạo tài khoản thất bại!' });
     }
-}
+};
 export const editUser = async (req, res) => {
     try {
-        const { name, gender, phone, email, password, role } = req.body;
+        const { name, gender, phone, email, role } = req.body;
         const { id } = req.params;
 
         const editSchema = joi.object({
             name: joi.string().required().messages({
-                'string.empty': 'Name is required'
+                'string.empty': 'Tên người dùng là bắt buộc!'
             }),
             gender: joi.boolean().required().messages({
-                'boolean.empty': 'Gender is required'
+                'boolean.empty': 'Giới tính là bắt buộc!'
             }),
             phone: joi.string().length(10).required().messages({
-                "string.length": "Phone must have 10 digits",
-                "any.required": "Please enter your Phone"
+                "string.length": "Số điện thoại phải có 10 chữ số!",
+                "any.required": "Vui lòng nhập số điện thoại của bạn!"
             }),
             email: joi.string().email().required().messages({
-                'string.email': 'Invalid email',
-                'string.empty': 'Email is required'
+                'string.email': 'Email không hợp lệ!',
+                'string.empty': 'Email là bắt buộc!'
             }),
-            password: joi.string().min(6).required().messages({
-                'string.min': 'Password must be at least 6 characters',
-                'string.empty': 'Password is required'
-            }),
-            role: joi.string().valid('manage', 'employee').required().messages({
-                'string.empty': `Role is required`,
-                'any.only': "Role must be either 'manage' or 'employee'"
+            role: joi.string().valid('Quản lý', 'Nhân viên').required().messages({
+                'string.empty': 'Vai trò là bắt buộc!',
+                'any.only': "Vai trò phải là Quản lý hoặc Nhân viên!"
             }),
         })
-        const { error } = editSchema.validate({ name, gender, phone, email, password, role });
+        const { error } = editSchema.validate({ name, gender, phone, email, role });
         if (error) {
             return res.status(400).json({
                 error: error.details.map(e => e.message)
@@ -195,7 +198,7 @@ export const editUser = async (req, res) => {
 
         const findUserByEmail = await User.findOne({ email });
         if (findUserByEmail && findUserByEmail._id.toString() !== id) {
-            return res.status(400).json({ message: "User email is already in use. Try using another email." });
+            return res.status(400).json({ message: "Email người dùng đã được sử dụng. Hãy thử sử dụng email khác!" });
         }
 
         const updateUser = await User.findByIdAndUpdate(id, {
@@ -203,20 +206,20 @@ export const editUser = async (req, res) => {
         }, { new: true }).select("-password")
 
         if (!updateUser) {
-            return res.status(400).json({ message: "User is not found" })
+            return res.status(400).json({ message: "Người dùng không tồn tại!" })
         }
 
         let prefix;
-        if (role === 'manage') {
+        if (role === 'Quản lý') {
             prefix = 'QL';
-        } else if (role === 'employee') {
+        } else if (role === 'Nhân viên') {
             prefix = 'NV';
         } else {
-            return res.status(400).json({ message: "Invalid role. Role must be either 'manager' or 'employee'." });
+            return res.status(400).json({ message: "Vai trò không hợp lệ. Vai trò phải là 'Quản lý' hoặc 'Nhân viên'." });
         }
 
-        if ((role === 'manage' && !updateUser.e_code.startsWith('QL')) ||
-            (role === 'employee' && !updateUser.e_code.startsWith('NV'))) {
+        if ((role === 'Quản lý' && !updateUser.e_code.startsWith('QL')) ||
+            (role === 'Nhân viên' && !updateUser.e_code.startsWith('NV'))) {
             // Tìm người dùng có mã nhân viên lớn nhất của vai trò mới
             const latestUser = await User.findOne({ e_code: new RegExp(`^${prefix}`) }).sort({ e_code: -1 }).exec();
             let newECode;
@@ -234,16 +237,20 @@ export const editUser = async (req, res) => {
         }
 
         return res.status(200).json({
-            message: "Update successful",
+            message: "Cập nhật thông tin người dùng thành công.",
             user: {
                 ...updateUser.toObject(),
                 createdAt: formatCreatedAt(updateUser.createdAt)
             }
         })
     } catch (error) {
-        return res.status(500).json(
-            { message: error.message }
-        )
+        console.error(error);
+        if (error.details) {
+            const errorMessage = error.details.map((detail) => detail.message).join(', ');
+            return res.status(400).json({ message: errorMessage });
+        } else {
+            return res.status(500).json({ message: "Cập nhật thông tin người dùng thất bại!" });
+        }
     }
 }
 export const deleteUser = async (req, res) => {
@@ -251,9 +258,9 @@ export const deleteUser = async (req, res) => {
         const { id } = req.params;
         const user = await User.findByIdAndDelete(id);
         if (!user) {
-            return res.status(400).json({ message: "User is not found" })
+            return res.status(400).json({ message: "Người dùng không tồn tại!" })
         }
-        return res.status(200).json({ message: "Delete successful" })
+        return res.status(200).json({ message: "Xóa người dùng thành công." })
     } catch (error) {
         return res.status(500).json({ message: error.message })
     }
@@ -261,12 +268,12 @@ export const deleteUser = async (req, res) => {
 export const getPagingUser = async (req, res) => {
     try {
         const query = req.query
-        const users = await User.find({ role: "employee" })
+        const users = await User.find({ role: "Nhân viên" })
             .skip(query.pageSize * query.pageIndex - query.pageSize)
             .limit(query.pageSize).sort({ createdAt: "desc" })
 
-        const countusers = await User.countDocuments({ role: "employee" })
-        const totalPage = Math.ceil(countusers / query.pageSize)
+        const countUsers = await User.countDocuments({ role: "Nhân viên" })
+        const totalPage = Math.ceil(countUsers / query.pageSize)
 
         // Format createdAt for each user
         const formattedUsers = users.map(user => ({
@@ -274,7 +281,7 @@ export const getPagingUser = async (req, res) => {
             createdAt: formatCreatedAt(user.createdAt)
         }));
 
-        return res.status(200).json({ users: formattedUsers, totalPage, count: countusers })
+        return res.status(200).json({ users: formattedUsers, totalPage, count: countUsers })
     } catch (error) {
         return res.status(500).json(error)
     }
@@ -293,14 +300,14 @@ export const searchUser = async (req, res) => {
             searchField = { name: { $regex: keyword, $options: 'i' } };
         } else if (option === "email") {
             searchField = { email: { $regex: keyword, $options: 'i' } };
-        } else if (option === "e_code"){
+        } else if (option === "e_code") {
             searchField = { e_code: { $regex: keyword, $options: 'i' } };
         }
 
-        const users = await User.find({ ...searchField, role: 'employee' });
+        const users = await User.find({ ...searchField, role: 'Nhân viên' });
 
         if (!users || users.length === 0) {
-            return res.status(404).json({ message: "User is not found" });
+            return res.status(404).json({ message: "Người dùng không tồn tại!" });
         }
 
         const formattedUsers = users.map(user => ({
@@ -313,21 +320,6 @@ export const searchUser = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
-export const getUserById = async (req, res) => {
-    try {
-        const userId = req.params.id
-        const user = await User.findById(userId)
-
-        if (!user) {
-            return res.status(404).json({ message: "User is not found" });
-        }
-
-        return res.status(200).json({ user })
-
-    } catch (error) {
-        return res.status(500).json({ message: error.message })
-    }
-}
 export const changePassword = async (req, res) => {
     const { compareSync, genSaltSync, hashSync } = bcrypt
     try {
@@ -337,16 +329,16 @@ export const changePassword = async (req, res) => {
 
         const changePasswordSchema = joi.object({
             oldPassword: joi.string().min(6).max(32).required().messages({
-                'string.empty': `oldPassword is required`,
-                'string.min': `oldPassword must be at least 6 characters`,
-                'string.max': `oldPassword must be at most 32 characters`,
-                'any.required': `oldPassword is required`
+                'string.empty': `Mật khẩu cũ là bắt buộc`,
+                'string.min': `Mật khẩu cũ phải có ít nhất 6 ký tự`,
+                'string.max': `Mật khẩu cũ phải có tối đa 32 ký tự`,
+                'any.required': `Mật khẩu cũ là bắt buộc`
             }),
             newPassword: joi.string().min(6).max(32).required().messages({
-                'string.empty': `newPassword is required`,
-                'string.min': `newPassword must be at least 6 characters`,
-                'string.max': `newPassword must be at most 32 characters`,
-                'any.required': `newPassword is required`
+                'string.empty': `Mật khẩu mới là bắt buộc`,
+                'string.min': `Mật khẩu mới phải có ít nhất 6 ký tự`,
+                'string.max': `Mật khẩu mới phải có tối đa 32 ký tự`,
+                'any.required': `Mật khẩu mới là bắt buộc`
             })
         })
         const { error } = changePasswordSchema.validate({ oldPassword, newPassword })
@@ -355,12 +347,12 @@ export const changePassword = async (req, res) => {
         }
         const user = await User.findById(id)
         if (!user) {
-            return res.status(404).json({ message: "User is not found" });
+            return res.status(404).json({ message: "Người dùng không tồn tại!" });
         }
 
         const checkPassword = compareSync(oldPassword, user.password)
         if (!checkPassword) {
-            return res.status(400).json({ message: "Old password is incorrect" })
+            return res.status(400).json({ message: "Mật khẩu cũ không chính xác!" })
         }
 
         const salt = genSaltSync()
@@ -371,10 +363,36 @@ export const changePassword = async (req, res) => {
         }).select("-password")
 
         return res.status(200).json({
-            message: "Update password successfull",
+            message: "Đổi mật khẩu thành công.",
             user: updatePassword
         })
     } catch (error) {
-        return res.status(500).json({ message: error.message })
+        console.error(error);
+        if (error.details) {
+            const errorMessage = error.details.map((detail) => detail.message).join(', ');
+            return res.status(400).json({ message: errorMessage });
+        } else {
+            return res.status(500).json({ message: "Đổi mật khẩu thất bại!" });
+        }
+    }
+}
+export const getUserProfile = async (req, res) => {
+    try {
+        const userId = req.user._id
+        const user = await User.findById(userId).select('-password')
+        return res.status(200).json({
+            user
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
+export const getUserById = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const user = await User.findById(userId);
+        return res.status(200).json({ user })
+    } catch (error) {
+        return res.status(500).json({ error });
     }
 }
